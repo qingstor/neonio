@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: neonio-redis-hs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: neonio-redis
+spec:
+  ports:
+    - port: 6379
+      name: client
+  clusterIP: None
+  selector:
+    app: neonio-redis
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: neonio-redis
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: neonio-redis
+  serviceName: neonio-redis-hs
+  replicas:  {{ .Values.redis.servers }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: neonio-redis
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - neonio-redis
+              topologyKey: kubernetes.io/hostname
+      hostNetwork: false
+      containers:
+        - name: neonio-redis
+          imagePullPolicy:  {{ .Values.redis.pullPlociy }}
+          image: "{{ .Values.redis.repository }}:{{ .Values.redis.tag }}"
+          ports:
+            - containerPort: 6379
+              name: client
+          command:
+            - sh
+            - '-c'
+            - "redis-server"
+          readinessProbe:
+            tcpSocket:
+              port: client
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: client
+            initialDelaySeconds: 10
+            timeoutSeconds: 5         
+                     

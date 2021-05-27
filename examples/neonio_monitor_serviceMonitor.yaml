@@ -1,0 +1,38 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: neonio-monitor-stores
+  namespace: kube-system
+spec:
+  selector:  
+    matchLabels:
+      app: neonio-monitor 
+  endpoints:
+  - port: client 
+    path: /stores 
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: neonio-monitor-status
+  namespace: kube-system
+spec:
+  selector:  
+    matchLabels:
+      app: neonio-monitor 
+  endpoints:
+  - port: client 
+    path: /status
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: neonio-monitor-metrics
+  namespace: kube-system
+spec:
+  selector:  
+    matchLabels:
+      app: neonio-monitor 
+  endpoints:
+  - port: client 
+    path: /metrics 
