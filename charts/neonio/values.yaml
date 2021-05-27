@@ -1,0 +1,132 @@
+#  Copyright (C) 2018 Yunify, Inc.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this work except in compliance with the License.
+#  You may obtain a copy of the License in the LICENSE file, or at:
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+driver:
+  name: neonsan.csi.qingstor.com
+  repository: csiplugin/csi-neonsan
+  tag: v1.2.0
+  pullPolicy: IfNotPresent
+  config: /etc/neonsan/qbd.conf
+  node:
+    repository: csiplugin/csi-neonsan-ubuntu
+    tag: v1.2.0
+    pullPolicy: IfNotPresent
+
+provisioner:
+  repository: csiplugin/csi-provisioner
+  tag: v1.5.0
+  volumeNamePrefix: pvc
+attacher:
+  repository: csiplugin/csi-attacher
+  tag: v2.1.1
+resizer:
+  repository: csiplugin/csi-resizer
+  tag: v0.4.0
+snapshotter:
+  repository: csiplugin/csi-snapshotter
+  tag: v2.0.1
+registrar:
+  repository: csiplugin/csi-node-driver-registrar
+  tag: v1.2.0
+
+sc:
+  enable: true
+  isDefaultClass: false
+  name: csi-neonsan
+  fsType: ext4
+  reclaimPolicy: Delete
+  allowVolumeExpansion: true
+  volumeBindingMode: Immediate
+  pool_name: kube
+  rep_count: 2
+  mrip:
+  mrport:
+  rpo:
+  encrypte:
+  key_name:
+  rg:
+  label:
+  policy:
+  dc:
+  sample_volume:
+  mutex_group:
+  role:
+  min_rep_count:
+  max_bs:
+  
+
+zookeeper:
+  name: neonio-zookeeper
+  repository: neonio/zookeeper-3.4.13
+  tag: v1.0.1
+  pullPolicy: IfNotPresent
+  servers: 3
+  
+galera:
+  name: neonio-galera
+  repository: neonio/galera_cluster
+  tag: v1.0.1
+  pullPolicy: IfNotPresent
+  servers: 3
+  
+center:
+  name: neonio-center
+  repository: neonio/center
+  tag: v1.0.1
+  pullPolicy: IfNotPresent
+  servers: 3
+  
+  
+store:
+  servers: 3
+  name: neonio-store
+  repository: neonio/store
+  tag: v1.0.1
+  pullPolicy: IfNotPresent  
+  type: TCP
+  dispatcher_iotaskpoolsize: 1024
+  replicator_iotaskpoolsize: 1024
+  disks: /dev/sdb
+  disk_type: SSD
+  trim_on_reclaim: 0
+  zero_on_reclaim: 0
+  
+monitor:
+  name: neonio-monitor
+  repository: neonio/monitor
+  tag: v1.0.1
+  pullPolicy: IfNotPresent
+  
+
+web:
+  servers: 2
+  name: neonio-web
+  repository: neonio/web
+  tag: v1.0.1
+  pullPolicy: IfNotPresent
+  prometheus: false
+  prometheus_svc: prometheus-operated.monitoring.svc.cluster.local
+  alertmanager: false
+  alertmanager_svc: alertmanager-operated.monitoring.svc.cluster.local
+  
+  
+redis:
+  servers: 3
+  name: neonio-redis
+  repository: redis
+  tag: 6.2.1
+  pullPolicy: IfNotPresent
+
+  
+    

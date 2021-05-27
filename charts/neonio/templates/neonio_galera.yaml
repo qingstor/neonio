@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: neonio-mysql-hs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: neonio-mysql
+spec:
+  ports:
+    - port: 4444
+      name: sst
+    - port: 4567
+      name: replication
+    - port: 4568
+      name: ist
+  clusterIP: None
+  selector:
+    app: neonio-mysql
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neonio-mysql-cs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: neonio-mysql
+spec:
+  ports:
+    - port: 3306
+      name: client
+  selector:
+    app: neonio-mysql
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: neonio-mysql-pdb
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: neonio-mysql
+  maxUnavailable: 1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: neonio-mysql
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: neonio-mysql
+  serviceName: neonio-mysql-hs
+  replicas:  {{ .Values.galera.servers }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: neonio-mysql
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - neonio-mysql
+              topologyKey: kubernetes.io/hostname
+      hostNetwork: false
+      containers:
+        - name: neonio-galera
+          imagePullPolicy: {{ .Values.galera.pullPlociy }}
+          image: "{{ .Values.galera.repository }}:{{ .Values.galera.tag }}"
+          env:
+          - name: SERVERS
+            value: "{{ .Values.galera.servers }}"
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          ports:
+            - containerPort: 3306
+              name: client
+            - containerPort: 4444
+              name: sst
+            - containerPort: 4567
+              name: replication
+            - containerPort: 4568
+              name: ist
+          command:
+            - sh
+            - '-c'
+            - "/opt/galera/bin/start_galera.sh"
+          volumeMounts:
+            - name: datadir
+              mountPath: /data/galera
+      volumes:
+      - name: datadir
+        hostPath:
+          path: /opt/neonsan
+      nodeSelector:
+         "neonio/mysql": "mysql"

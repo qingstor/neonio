@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: neonio-monitor-hs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: neonio-monitor
+spec:
+  ports:
+    - port: 2610
+      name: client
+  clusterIP: None
+  selector:
+    app: neonio-monitor
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: neonio-monitor-pdb
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: neonio-monitor
+  maxUnavailable: 1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: neonio-monitor
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: neonio-monitor
+  serviceName: neonio-monitor-hs
+  replicas:  {{ .Values.store.servers }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: neonio-monitor
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - neonio-monitor
+              topologyKey: kubernetes.io/hostname
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: neonio-monitor
+          imagePullPolicy: {{ .Values.monitor.pullPlociy }}
+          image: "{{ .Values.monitor.repository }}:{{ .Values.monitor.tag }}"
+          env:
+          - name: ZK_SERVERS
+            value: "{{ .Values.zookeeper.servers }}"
+          - name: MYSQL_SERVERS
+            value: "{{ .Values.galera.servers }}"
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: NODE_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.hostIP
+          ports:
+            - containerPort: 2610
+              name: client
+          command:
+            - sh
+            - '-c'
+            - "/opt/neonsan/bin/start_monitor.sh"
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - '-c'
+                - "/opt/neonsan/bin/status_monitor.sh"
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - '-c'
+                - "/opt/neonsan/bin/status_monitor.sh"
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: devices
+              mountPath: /dev
+            - name: config
+              mountPath: /etc/neonsan
+          securityContext:
+            privileged: true
+            readOnlyRootFilesystem: false
+            runAsUser: 0
+      volumes:
+         - name: devices
+           hostPath:
+              path: /dev  
+         - name: config
+           hostPath:
+              path: /etc/neonsan 
+      nodeSelector:
+         "neonio/store": "store"

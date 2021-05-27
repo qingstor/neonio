@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neonio-store
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: neonio-store
+  replicas: {{ .Values.store.servers }}
+  template:
+    metadata:
+      labels:
+        app: neonio-store
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - neonio-store
+              topologyKey: "kubernetes.io/hostname"
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+      - name: neonio-store
+        imagePullPolicy: {{ .Values.store.pullPlociy }}
+        image: "{{ .Values.store.repository }}:{{ .Values.store.tag }}"
+        env:
+        - name: DISKS
+          value: "{{ .Values.store.disks }}"
+        - name: DISK_TYPE
+          value: "{{ .Values.store.disk_type }}"
+        - name: TRIM_ON_RECLAIM
+          value: "{{ .Values.store.trim_on_reclaim }}"
+        - name: ZERO_ON_RECLAIM
+          value: "{{ .Values.store.zero_on_reclaim }}"
+        - name: CONNECT_TYPE
+          value: "{{ .Values.store.type }}"
+        - name: DISPATCHER_IOTASKPOOLSIZE
+          value: "{{ .Values.store.dispatcher_iotaskpoolsize }}"
+        - name: REPLICATOR_IOTASKPOOLSIZE
+          value: "{{ .Values.store.replicator_iotaskpoolsize }}"
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace 
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        command:
+        - sh
+        - -c
+        - "/opt/neonsan/bin/start_store.sh"
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "/opt/neonsan/bin/status_store.sh"
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "/opt/neonsan/bin/status_store.sh"
+          initialDelaySeconds: 10
+          timeoutSeconds: 5 
+        volumeMounts:
+          - name: devices
+            mountPath: /dev
+          - name: config
+            mountPath: /etc/neonsan
+        securityContext:
+          privileged: true
+          readOnlyRootFilesystem: false
+          runAsUser: 0
+      volumes:
+         - name: devices
+           hostPath:
+              path: /dev  
+         - name: config
+           hostPath:
+              path: /etc/neonsan              
+      nodeSelector:
+         "neonio/store": "store"
+         

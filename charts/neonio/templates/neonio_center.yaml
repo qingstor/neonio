@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: neonio-center-hs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: neonio-center
+spec:
+  ports:
+    - port: 2600
+      name: client
+  clusterIP: None
+  selector:
+    app: neonio-center
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: neonio-center-pdb
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: neonio-center
+  maxUnavailable: 1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: neonio-center
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: neonio-center
+  serviceName: neonio-center-hs
+  replicas:  {{ .Values.center.servers }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: neonio-center
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - neonio-center
+              topologyKey: kubernetes.io/hostname
+      hostNetwork: false
+      containers:
+        - name: neonio-center
+          imagePullPolicy: {{ .Values.center.pullPlociy }}
+          image: "{{ .Values.center.repository }}:{{ .Values.center.tag }}"
+          env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          ports:
+            - containerPort: 2600
+              name: client
+          command:
+            - sh
+            - '-c'
+            - "/opt/neonsan/bin/start_center.sh"
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - '-c'
+                - "/opt/neonsan/bin/status_center.sh"
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - '-c'
+                - "/opt/neonsan/bin/status_center.sh"
+            initialDelaySeconds: 10
+            timeoutSeconds: 5

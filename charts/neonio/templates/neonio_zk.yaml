@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: neonio-zk-hs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: neonio-zk
+spec:
+  ports:
+  - port: 2888
+    name: server
+  - port: 3888
+    name: leader-election
+  clusterIP: None
+  selector:
+    app: neonio-zk
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neonio-zk-cs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: neonio-zk
+spec:
+  ports:
+  - port: 2181
+    name: client
+  selector:
+    app: neonio-zk
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: neonio-zk-pdb
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: neonio-zk
+  maxUnavailable: 1
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: neonio-zk
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: neonio-zk
+  serviceName: neonio-zk-hs
+  replicas: {{ .Values.zookeeper.servers }}
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      labels:
+        app: neonio-zk
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - neonio-zk
+              topologyKey: "kubernetes.io/hostname"
+      hostNetwork: false
+      containers:
+      - name: neonio-zookeeper
+        imagePullPolicy: {{ .Values.zookeeper.pullPlociy }}
+        image: "{{ .Values.zookeeper.repository }}:{{ .Values.zookeeper.tag }}"
+        env :
+        - name: ZK_SERVERS
+          value: "{{ .Values.zookeeper.servers }}"
+        # resources:
+        #  requests:
+        #    memory: "1Gi"
+        #    cpu: "0.5"
+        ports:
+        - containerPort: 2181
+          name: client
+        - containerPort: 2888
+          name: server
+        - containerPort: 3888
+          name: leader-election
+        command:
+        - sh
+        - -c
+        - "/opt/zookeeper/bin/start_zookeeper.sh \
+          --servers=3 \
+          --data_dir=/var/lib/zookeeper/data \
+          --data_log_dir=/var/lib/zookeeper/data/log \
+          --conf_dir=/opt/zookeeper/conf \
+          --client_port=2181 \
+          --election_port=3888 \
+          --server_port=2888 \
+          --tick_time=2000 \
+          --init_limit=10 \
+          --sync_limit=5 \
+          --max_client_cnxns=200 \
+          --snap_retain_count=100 \
+          --purge_interval=24 \
+          --log_level=INFO"
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "/opt/zookeeper/bin/zookeeper_ready.sh 2181"
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "/opt/zookeeper/bin/zookeeper_ready.sh 2181"
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: datadir
+          mountPath: /var/lib/zookeeper
+      volumes:
+      - name: datadir
+        hostPath:
+          path: /opt/neonsan
+      nodeSelector:
+         "neonio/zk": "zk"
