@@ -32,6 +32,8 @@ spec:
         env:
         - name: DISKS
           value: "{{ .Values.store.disks }}"
+        - name: DEVFILTER
+          value: "{{ .Values.store.deviceFilter }}"
         - name: DISK_TYPE
           value: "{{ .Values.store.disk_type }}"
         - name: TRIM_ON_RECLAIM

@@ -1,15 +1,15 @@
 apiVersion: v2
 appVersion: 1.2.1
 description: A Helm chart for NeonIO
-home: https://github.com/yunify/qingstor-neonio
+home: https://github.com/qingstor/neonio/
 icon: https://s3.qingcloud.com/files/2021/02/qing-stor-neon-san.png
 keywords:
 - neonio
 kubeVersion: '>=1.14.0-0'
 maintainers:
 - email: hansyang@yunify.com
-  name: Xingxiang Yang
+  name: Yangxingxiang
 name: neonio
 sources:
-- https://github.com/yunify/qingstor-neonio
+- https://github.com/qingstor/neonio/
 version: 1.2.3
