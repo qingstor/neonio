@@ -1,3 +1,5 @@
+[English](README.md) | 中文 
+
 # NeonIO
 
 We are availabe in Matrix/slack. Those who want to find us online can join us through:
