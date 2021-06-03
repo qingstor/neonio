@@ -26,9 +26,9 @@ CSI：提供csi的标准IO接入服务
 
 # 安装
 ## 前置条件 
-1. Kubernetes已经成功部署，可按照Kubernetes的官网部署。
+1. Kubernetes已经成功部署，可按照Kubernetes的官网部署
 
-2. 集群的每个节点都已安装QBD，如未安装，用如下命令安装。
+2. 集群的每个节点都已安装qbd，如未安装，用如下命令安装，[下载qbd](https://github.com/qingstor/neonio.git)
 
     centos OS系列：`rpm -ivh pitrix-dep-qbd-2.1.2-1dkms.noarch.rpm pitrix-dep-qbd-util-2.1.2-1.el8.x86_64.rpm`
 
