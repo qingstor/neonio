@@ -69,14 +69,14 @@ sc:
 zookeeper:
   name: neonio-zookeeper
   repository: neonio/zookeeper-3.4.13
-  tag: v1.0.1
+  tag: v1.0.2
   pullPolicy: IfNotPresent
   servers: 3
   
 galera:
   name: neonio-galera
   repository: neonio/galera_cluster
-  tag: v1.0.1
+  tag: v1.0.2
   pullPolicy: IfNotPresent
   servers: 3
   
@@ -92,12 +92,13 @@ store:
   servers: 3
   name: neonio-store
   repository: neonio/store
-  tag: v1.0.1
+  tag: v1.0.2
   pullPolicy: IfNotPresent  
   type: TCP
   dispatcher_iotaskpoolsize: 1024
   replicator_iotaskpoolsize: 1024
-  disks: /dev/sdb
+  disks:
+  deviceFilter: 
   disk_type: SSD
   trim_on_reclaim: 0
   zero_on_reclaim: 0
@@ -113,7 +114,7 @@ web:
   servers: 2
   name: neonio-web
   repository: neonio/web
-  tag: v1.0.1
+  tag: v1.0.2
   pullPolicy: IfNotPresent
   prometheus: false
   prometheus_svc: prometheus-operated.monitoring.svc.cluster.local
@@ -127,6 +128,4 @@ redis:
   repository: redis
   tag: 6.2.1
   pullPolicy: IfNotPresent
-
   
-    
