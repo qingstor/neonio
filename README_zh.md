@@ -64,10 +64,10 @@ CSI：提供csi的标准IO接入服务
 
 登陆Kubernetes集群的master节点，运行如下命令，如果输出为空，表示NeonIO未安装，如果输出结果类似下方，则表示NeonIO已经安装。
 
-`kubectl get pod -A | grep neon`
+`kubectl get pod -A -owide | grep neon`
 
 
-![kubectl get pod -A | grep neon回显](docs/images/kubectl_get_pod_neon.png)
+![kubectl get pod -A -owide | grep neon回显](docs/images/kubectl_get_pod_neon.png)
 
 
 ## 安装
@@ -133,9 +133,9 @@ CSI：提供csi的标准IO接入服务
 
     3.2 用如下命令查看，等到都read都OK了为止
 
-    `kubectl get pod -A | grep neon`
+    `kubectl get pod -A -owide | grep neon`
 
-    ![kubectl get pod -A | grep neon回显](docs/images/kubectl_get_pod_neon.png)
+    ![kubectl get pod -A -owide | grep neon回显](docs/images/kubectl_get_pod_neon.png)
 
     3.3 检查集群状态 
     
