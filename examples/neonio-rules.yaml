@@ -1,0 +1,139 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: k8s
+    role: alert-rules
+  name: neonio-rules
+  namespace: monitoring
+spec:
+  groups:
+  - name: neonio.rules
+    rules:
+    - alert: High_CPU_Usage
+      annotations:
+        summary: "节点 {{ $labels.store_ip }} 的neonstore服务状态异常：{{$labels.status_description}}"
+        description: "abnormal store status on {{ $labels.store_ip }}, status:{{$labels.status_description}}"
+      expr: neonsan_cpu > 80
+      for: 1m
+      labels:
+        severity: warning
+    - alert: High_Memory_Usage
+      annotations:        
+        summary: "节点 {{ $labels.instance }} 的内存使用率过高：{{ $value }}%."
+        description: "{{ $labels.instance }} memory usage is too high : {{ $value }}%."
+      expr: neonsan_memory{mem="percent"} > 80
+      for: 1m
+      labels:
+        severity: warning        
+    - alert: Abnormal_Store_Status
+      annotations:        
+        summary: "节点 {{ $labels.store_ip }} 的neonstore服务状态异常：{{$labels.status_description}}"
+        description: "abnormal store status on {{ $labels.store_ip }}, status:{{$labels.status_description}}"
+      expr: neonsan_store_status > 0
+      for: 1m
+      labels:
+        severity: warning
+    - alert: Abnomal_Volume_Status
+      annotations:        
+        summary: "NeonSAN卷：{{$labels.volume}} 状态异常：{{$labels.status_description}}"
+        description: "abnormal volume status on {{$labels.volume}}, status: {{$labels.status_description}}"
+      expr: neonsan_volume_status > 0
+      for: 1m
+      labels:
+        severity: warning
+        
+    - alert: Abnormal_Port_Status
+      annotations:
+        summary: "NeonSAN服务器端口：{{ $labels.port_ip }} 状态异常：error"
+        description: "abnormal port status on {{ $labels.port_ip }}, status:error"
+      expr: neonsan_port_status > 0
+      labels:
+        severity: warning
+    - alert: SSD_Free_Space_Insufficient
+      annotations:        
+        summary: "节点 {{ $labels.store_ip }} 的硬盘：{{ $labels.ssd }} 剩余容量不足，当前剩余：{{ $value }}%. "
+        description: "{{ $labels.ssd }} on node {{ $labels.store_ip }}  free space is too low : {{ $value }}%. "
+      expr: neonsan_ssd{type="freePct"} < 20
+      for: 1m
+      labels:
+        severity: warning        
+    - alert: Abnormal_SSD_Status
+      annotations:        
+        summary: "节点 {{$labels.store_ip}} 的硬盘：{{ $labels.ssd}} 状态异常:{{$value}}."
+        description: "abnormal ssd status on {{ $labels.ssd}} on node {{$labels.store_ip}}, status: offline"
+      expr: neonsan_ssd{type="status"}> 0
+      labels:
+        severity: warning
+    - alert: SSD_Wears_Out
+      annotations:        
+        summary: "节点 {{$labels.store_ip}} 的硬盘：{{$labels.ssd}} 使用寿命达到:{{$value}}%."
+        description: "{{$labels.ssd}} on {{$labels.store_ip}} is going to wear out, degree of wear:{{$value}}%."
+      expr: neonsan_ssd{type="wear"} > 90 
+      labels:
+        severity: warning       
+    - alert: Center_Leader_Changed
+      annotations:
+        summary: "Leader center从节点 {{$labels.last_centerip}} 切换到节点：{{ $labels.center_ip }}."
+        description: "previous center leader is {{$labels.last_centerip}}, now {{ $labels.center_ip }} has been new leader."
+      expr: neonsan_center_role > 0
+      labels:
+        severity: warning
+    - alert: CAS_HDD_Write_Errors
+      annotations:        
+        summary: "节点 {{$labels.store}} 的硬盘{{$labels.dev_name}}存在{{$value}}个core write error"
+        description: "{{$labels.hdd_name}} ({{$labels.dev_name}}) on node {{$labels.store}} write errors count :{{$value}}"
+      expr:  neonsan_core_write_status > 0
+      for: 1m
+      labels:
+        severity: warning        
+    - alert: High_Device_IO_Usage
+      annotations:        
+        summary: "节点 {{$labels.store_ip}} 的硬盘: {{$labels.device}} io usage 过高达到:{{$value}}%."
+        description: "The average of I/O usage of {{$labels.device}} on node {{$labels.store_ip}} is too high:{{$value}}%."
+      expr: neonsan_io_usage{type="average"} > 90
+      labels:
+        severity: warning
+    - alert: Abnormal_MySQL_plus_Status
+      annotations:        
+        summary: "节点 {$labels.store_ip}} 的数据库服务异常."
+        description: "Abnormal mysql-plus status on {{$labels.store_ip}}"
+      expr: neonsan_mysql_status > 0
+      labels:
+        severity: warning
+        
+    - alert: Abnormal_Zookeeper_Status
+      annotations:
+        summary: "节点 {{$labels.store_ip}} 的zookeeper服务异常."
+        description: "节点 {{$labels.store_ip}} 的zookeeper服务异常."
+      expr: neonsan_zookeeper_status > 0
+      labels:
+        severity: warning
+    - alert: Abnormal_hdd_status
+      annotations:        
+        summary: "节点{{$labels.store_ip}} 的硬盘{{$labels.dev_name}}的raid中位于{{$labels.location}} 的盘有{{$value}}个media error."
+        description: "disk at location:{{$labels.location}} of device {{$labels.dev_name}} on {{$labels.store_ip}} has media error,count:{{$value}}"
+      expr: neonsan_raid_disk_status{error_type="media_err_cnt"} > 0
+      labels:
+        severity: warning        
+    - alert: Abnormal_hdd_status
+      annotations:        
+        summary: "节点{{$labels.store_ip}} 的硬盘{{$labels.dev_name}}的raid中位于{{$labels.location}} 的盘有{{$value}}个other error."
+        description: "disk at location:{{$labels.location}} of device {{$labels.dev_name}} on {{$labels.store_ip}} has other error,count:{{$value}}"
+      expr: neonsan_raid_disk_status{error_type="other_err_cnt"} > 0
+      labels:
+        severity: warning
+    - alert: Abnormal_hdd_status
+      annotations:        
+        summary: "节点{{$labels.store_ip}} 的硬盘{{$labels.dev_name}}的raid中位于{{$labels.location}} 的盘存在{{$value}}个predictive_failure."
+        description: "disk at location:{{$labels.location}} of device {{$labels.dev_name}} on {{$labels.store_ip}} has predictive_failure,count:{{$value}}"
+      expr: neonsan_raid_disk_status{error_type="predictive_failure"} > 0 
+      labels:
+        severity: warning
+    - alert: Abnormal_hdd_status
+      annotations:        
+        summary: "节点{{$labels.store_ip}} 的硬盘{{$labels.dev_name}}的raid中位于{{$labels.location}} 的盘firmware state异常."
+        description: "abnormal firmware state on disk at location:{{$labels.location}} of device {{$labels.dev_name}} on {{$labels.store_ip}}"
+      expr: neonsan_raid_disk_status{error_type="firmware_state"} > 0 
+      labels:
+        severity: warning

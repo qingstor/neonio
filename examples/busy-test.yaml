@@ -1,0 +1,31 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: neonsan-test-pvc
+spec:
+  storageClassName: csi-neonsan
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-test
+spec:
+  containers:
+    - name: busybox
+      imagePullPolicy: IfNotPresent
+      image: busybox:latest
+      command: [ "/bin/sh", "-c", "tail -f /dev/null" ]
+      volumeMounts:
+      - name: volume1
+        mountPath: "/mnt/volume1"
+  volumes:
+  - name: volume1
+    persistentVolumeClaim:
+      claimName: neonsan-test-pvc
+  restartPolicy: Never
+ 
