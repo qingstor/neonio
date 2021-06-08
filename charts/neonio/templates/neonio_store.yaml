@@ -46,6 +46,8 @@ spec:
           value: "{{ .Values.store.dispatcher_iotaskpoolsize }}"
         - name: REPLICATOR_IOTASKPOOLSIZE
           value: "{{ .Values.store.replicator_iotaskpoolsize }}"
+        - name: CENTER_SVC
+          value: "{{ .Values.driver.qbd.center_svc}}"
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:

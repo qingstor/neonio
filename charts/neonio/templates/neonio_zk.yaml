@@ -29,6 +29,21 @@ spec:
   selector:
     app: neonio-zk
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neonio-zk-nodeport
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: NodePort
+  selector:
+    app: neonio-zk
+  ports:
+    - port: 2181
+      nodePort: 32181
+  selector:
+    app: neonio-zk
+---
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
