@@ -345,8 +345,7 @@ STATUS: deployed
 REVISION: 1
 TEST SUITE: None
 
-#k8s集群2部署csi-neonio,需要通过driver.qbd.zk_svc，driver.qbd.center_svc指定zk、center服务组件的node节点IP，比如这里部署这两个服务组件的node节点为192.168.101.174-192.168.101.175-192.168.101.176
-
+#k8s集群2部署csi-neonio,同样k8s集群2需要满足《前置条件》，提示：需要通过driver.qbd.zk_svc，driver.qbd.center_svc指定zk、center服务组件的node节点IP，比如这里部署这两个服务组件的node节点为192.168.101.174-192.168.101.175-192.168.101.176
 root@host04:~/neonio/charts# helm install csi-neonio ./csi-neonio --namespace kube-system --set driver.qbd.zk_svc="192.168.101.174-192.168.101.175-192.168.101.176" --set driver.qbd.center_svc="192.168.101.174-192.168.101.175-192.168.101.176"
 NAME: csi-neonio
 LAST DEPLOYED: Tue Jun  8 16:44:08 2021
