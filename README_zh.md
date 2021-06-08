@@ -317,6 +317,105 @@ kubectl get storageclass <storageclass name> -o yaml
 kubect logs <neonsan csi pod name> -c <container name>
 ```
 
+# 应用场景
+
+- k8s集群1部署neonio，k8s集群2通过CSI使用k8s集群1的neonio存储
+```
+# k8s集群1
+root@testr01n01:~# kubectl get node -owide
+NAME         STATUS   ROLES           AGE   VERSION   INTERNAL-IP       EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+testr01n01   Ready    master,worker   54d   v1.17.9   192.168.101.174   <none>        Ubuntu 16.04.5 LTS   4.15.0-58-generic   docker://19.3.8
+testr01n02   Ready    master,worker   54d   v1.17.9   192.168.101.175   <none>        Ubuntu 16.04.5 LTS   4.15.0-58-generic   docker://19.3.8
+testr01n03   Ready    master,worker   54d   v1.17.9   192.168.101.176   <none>        Ubuntu 16.04.5 LTS   4.15.0-58-generic   docker://19.3.8
+
+# k8s集群2
+root@host04:~# kubectl get node -owide
+NAME     STATUS   ROLES                  AGE    VERSION   INTERNAL-IP       EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+host03   Ready    <none>                 147d   v1.20.1   192.168.101.245   <none>        Ubuntu 16.04.5 LTS   4.4.0-131-generic   docker://19.3.11
+host04   Ready    control-plane,master   147d   v1.20.1   192.168.101.250   <none>        Ubuntu 16.04.5 LTS   4.4.0-131-generic   docker://19.3.11
+host05   Ready    <none>                 147d   v1.20.1   192.168.101.251   <none>        Ubuntu 16.04.5 LTS   4.4.0-131-generic   docker://19.3.11
+host06   Ready    <none>                 147d   v1.20.1   192.168.101.252   <none>        Ubuntu 16.04.5 LTS   4.4.0-131-generic   docker://19.3.11
+
+# k8s集群1参考《安装》章节的3.1-3.6完成neonio的部署，3.1章节部署neonio的命令换成如下：
+root@testr01n01:~/neonio/charts# helm install neonio ./neonio --namespace kube-system --set center.hostnetwork=true
+NAME: neonio
+LAST DEPLOYED: Tue Jun  8 16:35:51 2021
+NAMESPACE: kube-system
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+
+#k8s集群2部署csi-neonio,需要通过driver.qbd.zk_svc，driver.qbd.center_svc指定zk、center服务组件的node节点IP，比如这里部署这两个服务组件的node节点为192.168.101.174-192.168.101.175-192.168.101.176
+
+root@host04:~/neonio/charts# helm install csi-neonio ./csi-neonio --namespace kube-system --set driver.qbd.zk_svc="192.168.101.174-192.168.101.175-192.168.101.176" --set driver.qbd.center_svc="192.168.101.174-192.168.101.175-192.168.101.176"
+NAME: csi-neonio
+LAST DEPLOYED: Tue Jun  8 16:44:08 2021
+NAMESPACE: kube-system
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+
+# 查看部署成功
+root@host04:~/neonio/charts# kubectl get pod -A |grep neon
+kube-system   csi-neonsan-controller-5c848f788c-8d8w8   5/5     Running   0          7m40s
+kube-system   csi-neonsan-node-2j5dq                    2/2     Running   0          7m40s
+kube-system   csi-neonsan-node-2m52j                    2/2     Running   0          7m40s
+kube-system   csi-neonsan-node-6dq68                    2/2     Running   0          7m40s
+kube-system   csi-neonsan-node-qdpmq                    2/2     Running   0          7m40s
+
+# k8s集群2通过CSI使用k8s集群1的neonio存储
+
+root@host04:~# cat busybox-test.yaml 
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: neonsan-test-pvc
+spec:
+  storageClassName: csi-neonsan
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-test
+spec:
+  containers:
+    - name: busybox
+      imagePullPolicy: IfNotPresent
+      image: busybox:latest
+      command: [ "/bin/sh", "-c", "sleep 1000000000" ]
+      volumeMounts:
+      - name: volume1
+        mountPath: "/mnt/volume1"
+  volumes:
+  - name: volume1
+    persistentVolumeClaim:
+      claimName: neonsan-test-pvc
+  restartPolicy: Never
+
+
+root@host04:~# kubectl apply -f busybox-test.yaml 
+persistentvolumeclaim/neonsan-test-pvc created
+pod/busybox-test created
+
+root@host04:~# kubectl get pod 
+NAME           READY   STATUS    RESTARTS   AGE
+busybox-test   1/1     Running   0          30s
+
+root@host04:~# kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                      STORAGECLASS   REASON   AGE
+pvc-ccc2e1b6-1643-45cf-b875-9411e2f13ed9   10Gi       RWO            Delete           Bound    default/neonsan-test-pvc   csi-neonsan             45s
+
+root@host04:~# kubectl get pvc
+NAME               STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+neonsan-test-pvc   Bound    pvc-ccc2e1b6-1643-45cf-b875-9411e2f13ed9   10Gi       RWO            csi-neonsan    49s
+
+```
+
 
 # 联系方式
 
