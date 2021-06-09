@@ -30,9 +30,9 @@ CSI：提供csi的标准IO接入服务
 
 2. 集群的每个节点都已安装qbd，如未安装，用如下命令安装，[下载qbd](https://github.com/qingstor/neonio.git)
 
-    centos OS系列：`rpm -ivh pitrix-dep-qbd-2.1.2-1dkms.noarch.rpm pitrix-dep-qbd-util-2.1.2-1.el8.x86_64.rpm`
+    centos OS系列：`rpm -ivh pitrix-dep-qbd-2.1.3.rc1-1dkms.noarch.rpm pitrix-dep-qbd-util-static-2.1.3.rc1-1.x86_64.rpm`
 
-    ubuntu OS系列：`dpkg -i pitrix-dep-qbd-dkms_2.1.2_all.deb pitrix-dep-qbd-util-2.1.2.amd64.deb`
+    ubuntu OS系列：`dpkg -i pitrix-dep-qbd-dkms_2.1.3.rc1_all.deb pitrix-dep-qbd-util-static-2.1.3.rc1.amd64.deb`
 
 3. Kubernetes集群的每个节点都加载了qbd和qbd_tcp模块
 
